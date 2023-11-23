@@ -65,6 +65,7 @@ mqtt_broker: YOUR_MQTT_BROKER_IP
 mqtt_port: 1883
 mqtt_username: YOUR_MQTT_USER # optional
 mqtt_password: YOUR_MQTT_PASSWORD # optional
+result_language: english # optional
 # prompt: >
 #   If necessary, uncomment this and use your prompt here
 #   The default prompt can be found in mqtt_client.py
