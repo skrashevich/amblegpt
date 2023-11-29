@@ -18,7 +18,8 @@ More video examples:
 
 | Video        | GPT Summary    |       
 | ------------- |:-------------:|
-| ![](assets/mock_package_theft_480p.gif)         | A man appeared, approached a package left outside, picked it up, and walked away. This could indicate a potential package theft, as the person showed no signs of verifying address or ownership before taking the package.|
+| ![](assets/mock_package_theft_480p.gif)         | Suspicious: A man appeared, approached a package left outside, picked it up, and walked away. This could indicate a potential package theft, as the person showed no signs of verifying address or ownership before taking the package.|
+| ![](assets/mock_suspicious_visitor.gif)   | Suspicious: A person wearing a hoodie and a mask is seen approaching, standing by, and then walking away from the front door of a house. The person is carrying a bat and the scene takes place during nighttime, which is suggestive of suspicious or potentially criminal activity.|
 | ![](assets/ups_delivery.gif)      | A delivery man, approximately 35 years old, approached the door and placed a package down. He briefly interacted with a mobile device before leaving the scene. |
 | ![](assets/female_waiting_at_door_480p.gif)      | A female, approximately 30 years old and 1.65 meters tall, is seen approaching and standing at the front door, looking down momentarily and then preparing to interact with the person who might open the door |
 | ![](assets/usps_delivery_480p.gif)      | A postal worker (in a blue uniform) was seen exiting a delivery vehicle and walking off-screen, presumably to deliver mail or a package. |
@@ -63,12 +64,26 @@ frigate_server_ip: YOUR_FRIGATE_IP
 frigate_server_port: 5000
 mqtt_broker: YOUR_MQTT_BROKER_IP
 mqtt_port: 1883
+result_language: english # optional
 mqtt_username: YOUR_MQTT_USER # optional
 mqtt_password: YOUR_MQTT_PASSWORD # optional
-result_language: english # optional
-# prompt: >
-#   If necessary, uncomment this and use your prompt here
-#   The default prompt can be found in mqtt_client.py
+prompt: > #optional
+   If necessary, uncomment this and use your prompt here
+   The default prompt can be found in mqtt_client.py
+
+per_camera_configuration: #optional
+  # The camera name must match Frigate
+  Front Door:
+    # The custom prompt is optional and is used to provide more context for GPT to better understand the footage.
+    # This will be inserted into the prompt before sending it to GPT.
+    custom_prompt: >
+      The camera that took the footage is a doorbell camera outside the front door of the house.
+      The door is on the left side of the video frame and the exit is on the right side.
+  Outside:
+    custom_prompt: >
+      The camera that took the footage is mounted on the frame of the front window of the house facing the street.
+      The street allow guest parking and it is normal to see cars parked on the street.
+      There might also be people walking (with their dogs) on the sidewalk before 9pm.
 ```
 
 ### Run AmbleGPT
@@ -102,5 +117,5 @@ Note, the processing time for each video clip, which includes decoding and proce
 
 ## Future Work
 1. ~Allow easier prompt customization~
-2. Further reduce # of tokens required to process a clip
-3. Custom prompts per camera to allow GPT to understand the angle and context of each camera.
+2. ~Custom prompts per camera to allow GPT to understand the angle and context of each camera.~
+3. Further reduce # of tokens required to process a clip

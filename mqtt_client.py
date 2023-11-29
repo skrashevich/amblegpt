@@ -41,25 +41,26 @@ GAP_SECS = 3
 # GPT config
 DEFAULT_PROMPT = """
 You're a helpful assistant helping to label a video for machine learning training
-You are reviewing some continuous frames of a video footage as of {EVENT_START_TIME}. Frames are {GAP_SECS} second(s) apart from each other in the chronological order…
+You are reviewing some continuous frames of a video footage as of {EVENT_START_TIME}. Frames are {GAP_SECS} second(s) apart from each other in the chronological order.
+{CAMERA_PROMPT}
 Please describe what happend in the video in json format. Do not print any markdown syntax!
 Answer like the following:
 {{
-    num_persons : 2,
-    persons : [
+    "num_persons" : 2,
+    "persons" : [
     {{
-        height_in_meters: 1.75,
-        duration_of_stay_in_seconds: 15,
-        gender: "female",
-        age: 50
+        "height_in_meters": 1.75,
+        "duration_of_stay_in_seconds": 15,
+        "gender": "female",
+        "age": 50
     }},
     {{
-        height_in_meters: 1.60,
-        duration_of_stay_in_seconds: 15,
-        gender: "unknown",
-        age: 36
+        "height_in_meters": 1.60,
+        "duration_of_stay_in_seconds": 15,
+        "gender": "unknown",
+        "age": 36
     }},
-    summary: SUMMARY
+    "summary": "SUMMARY"
 }}
 
 You can guess their height and gender . It is 100 percent fine to be inaccurate.
@@ -75,8 +76,8 @@ Some example SUMMARIES are
     1. One person walked by towards right corner with her dog without paying attention towards the camera's direction.
     2. One Amazon delivery person (in blue vest) dropped off a package.
     3. A female is waiting, facing the door.
-    4. A person is wandering without obvious purpose in the middle of the night, which seems suspicious.
-    5. A person walked into the frame from outside, picked up a package, and left.
+    4. Suspicious: A person is wandering without obvious purpose in the middle of the night, which seems suspicious.
+    5. Suspicious: A person walked into the frame from outside, picked up a package, and left.
        The person didn't wear any uniform so this doesn't look like a routine package pickup. Be aware of potential package theft!
 
 Write your answer in {RESULT_LANGUAGE} language.
@@ -86,12 +87,23 @@ PROMPT_TEMPLATE = config.get("prompt", DEFAULT_PROMPT)
 
 RESULT_LANGUAGE = config.get("result_language", "english")
 
+PER_CAMERA_CONFIG = config.get("per_camera_configuration", {})
 
-def generate_prompt(gap_secs, event_start_time):
+
+def get_camera_prompt(camera_name):
+    # Retrieve custom prompt for a specific camera
+    camera_config = PER_CAMERA_CONFIG.get(camera_name)
+    if camera_config and "custom_prompt" in camera_config:
+        return camera_config["custom_prompt"]
+    return ""
+
+
+def generate_prompt(gap_secs, event_start_time, camera_name):
     return PROMPT_TEMPLATE.format(
         GAP_SECS=gap_secs,
         EVENT_START_TIME=event_start_time,
         RESULT_LANGUAGE=RESULT_LANGUAGE,
+        CAMERA_PROMPT=get_camera_prompt(camera_name),
     )
 
 
@@ -271,7 +283,9 @@ def process_message(payload):
             return
 
         local_time_str = get_local_time_str(ts=payload["after"]["start_time"])
-        prompt = generate_prompt(GAP_SECS, local_time_str)
+        prompt = generate_prompt(
+            GAP_SECS, local_time_str, camera_name=payload["after"]["camera"]
+        )
         response = prompt_gpt4_with_video_frames(prompt, video_base64_frames)
         logging.info(f"GPT response {response.json()}")
         json_str = response.json()["choices"][0]["message"]["content"]
@@ -335,7 +349,7 @@ def on_message(client, userdata, msg):
                 "Skipping because the message with this snapshot is already (being) processed"
             )
             return
-        if not payload["before"]["has_clip"]:
+        if not payload["after"]["has_clip"]:
             # Skip if this snapshot has already been processed
             logging.info("Skipping because of no available video clip yet")
             return
