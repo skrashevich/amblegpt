@@ -37,6 +37,7 @@ CLIP_ENDPOINT = "/api/events/{}/clip.mp4"
 
 # Video frame sampling settings
 GAP_SECS = 3
+MAX_FRAMES_PER_VIDEO = 20
 
 # GPT config
 DEFAULT_PROMPT = """
@@ -199,6 +200,20 @@ def extract_frames_imagio(video_path, gap_secs):
     return frames
 
 
+def calculate_video_length(video_path):
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        "{}".format(video_path),
+    ]
+    return float(subprocess.check_output(cmd))
+
+
 def extract_frames_ffmpeg(video_path, gap_secs):
     logging.info("Extracting frames from video using FFmpeg")
 
@@ -207,13 +222,19 @@ def extract_frames_ffmpeg(video_path, gap_secs):
     frames_dir = os.path.join("cache_video", video_name)
     os.makedirs(frames_dir, exist_ok=True)
 
+    # Calculate the video length
+    video_length = calculate_video_length(video_path)
+    logging.info(f"Video is {video_length} seconds long")
+
+    fps = 1 / max(gap_secs, video_length / MAX_FRAMES_PER_VIDEO)
+
     # FFmpeg command to extract frames every gap_secs seconds and resize them
     ffmpeg_command = [
         "ffmpeg",
         "-i",
         video_path,
         "-vf",
-        f"fps=1/{gap_secs},scale=480:480:force_original_aspect_ratio=decrease",
+        f"fps={fps},scale=480:480:force_original_aspect_ratio=decrease",
         "-q:v",
         "2",  # Quality level for JPEG
         os.path.join(frames_dir, "frame_%04d.jpg"),
@@ -259,10 +280,8 @@ def download_video_clip_and_extract_frames(event_id, gap_secs):
             # After downloading, extract frames
             frames = extract_frames(clip_filename, gap_secs)
             os.remove(clip_filename)
-        except OSError:
-            logging.error(
-                f"Failed to save video clip for event {event_id}. Error: {OSError.strerror}"
-            )
+        except Exception as e:
+            logging.error(f"Failed to save video clip for event {event_id}. Error: {e}")
             frames = []
         return frames
     else:
@@ -287,12 +306,13 @@ def process_message(payload):
             GAP_SECS, local_time_str, camera_name=payload["after"]["camera"]
         )
         response = prompt_gpt4_with_video_frames(prompt, video_base64_frames)
-        logging.info(f"GPT response {response.json()}")
+        # logging.info( f"GPT response {response.json().get('choices')[0].get('message').get('content')}" )
         json_str = response.json()["choices"][0]["message"]["content"]
         result = json.loads(json_str)
 
         # Set the summary to the 'after' field
         payload["after"]["summary"] = "| GPT: " + result["summary"]
+        logging.info("Summary: " + result["summary"])
 
         # Convert the updated payload back to a JSON string
         updated_payload_json = json.dumps(payload)
