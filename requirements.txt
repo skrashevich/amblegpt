@@ -1,6 +1,7 @@
 paho-mqtt
 python-dotenv
 requests
+simplejson
 Pillow
 imageio
 imageio[ffmpeg]
