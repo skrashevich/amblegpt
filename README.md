@@ -9,6 +9,11 @@ AmbleGPT is activated by a Frigate event via MQTT and analyzes the event clip us
 **⚠️ Warning: this repo is under active development. Please expect bugs and imperfections. You're welcome to submit issues.**
 
 
+## Recent Updates
+* An option for less verbose summary: see `verbose_summary_mode` below (2023-11-30)
+* Use ffmpeg (if available) for sampling video . Thanks @skrashevich for the contribution (2023-11-30)
+
+
 ## Demo
 
 ![Notification: Two people crossing street](assets/notif_person_on_street.jpeg)
@@ -67,6 +72,7 @@ mqtt_port: 1883
 result_language: english # optional
 mqtt_username: YOUR_MQTT_USER # optional
 mqtt_password: YOUR_MQTT_PASSWORD # optional
+verbose_summary_mode: false #optinal, default true
 prompt: > #optional
    If necessary, uncomment this and use your prompt here
    The default prompt can be found in mqtt_client.py
