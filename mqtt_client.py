@@ -107,6 +107,7 @@ VERBOSE_SUMMARY_MODE = config.get("verbose_summary_mode", True)
 
 ADD_HA_SWITCH = config.get("add_ha_switch", False)
 
+SKIP_STATIONARY = config.get("skip_stationary", False)
 
 def get_camera_prompt(camera_name):
     # Retrieve custom prompt for a specific camera
@@ -424,6 +425,10 @@ def on_message(client, userdata, msg):
             # Skip if this snapshot has already been processed
             logging.info("Skipping because of no available video clip yet")
             return
+        if payload["after"]["stationary"] and SKIP_STATIONARY:
+            # Skip if this stationary and config is set to True
+            logging.info("Skipping stationary object")
+            return           
         event_id = payload["after"]["id"]
         logging.info(f"Event ID: {event_id}")
 
