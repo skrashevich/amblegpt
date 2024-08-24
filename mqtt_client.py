@@ -157,7 +157,7 @@ def prompt_gpt4_with_video_frames(prompt, base64_frames, low_detail=True):
         },
     ]
     payload = {
-        "model": "gpt-4o",
+        "model": "gpt-4o-2024-08-06",
         "messages": PROMPT_MESSAGES,
         "max_tokens": 200,
     }
